@@ -1,7 +1,15 @@
-ARG keycloak_version
+FROM quay.io/keycloak/keycloak:21.1.1 as builder
 
-FROM quay.io/keycloak/keycloak:${keycloak_version}
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+ENV KC_DB=mysql
 
-ARG keycloak_bcrypt_version=1.5.1
+COPY ./keycloak-bcrypt-1.5.3.jar /opt/keycloak/providers/
 
-COPY ./keycloak-bcrypt-${keycloak_bcrypt_version}.jar /opt/keycloak/providers/
+RUN /opt/keycloak/bin/kc.sh build
+
+FROM quay.io/keycloak/keycloak:21.1.1
+
+COPY --from=builder /opt/keycloak/ /opt/keycloak/
+
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
